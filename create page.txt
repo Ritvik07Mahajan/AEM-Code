@@ -1,0 +1,37 @@
+  protected void doGet(final SlingHttpServletRequest request, final SlingHttpServletResponse response) throws IOException {
+        createPageWithProperties(request,
+                response,
+                "samplePage",
+                "sample",
+                "/conf/chli/settings/wcm/templates/chli-blog-page-template",
+                "/content/chli/us/en");
+    }
+
+    void createPageWithProperties(SlingHttpServletRequest request,
+                                  SlingHttpServletResponse response,
+                                  String pageTitle,
+                                  String pageName,
+                                  String templatePath,
+                                  String parentPath) throws IOException {
+
+        // Obtain the ResourceResolver from the request
+        try (ResourceResolver resolver = request.getResourceResolver()) {
+            PageManager pageManager = resolver.adaptTo(PageManager.class);
+            if (pageManager != null) {
+                Page newPage = pageManager.create(parentPath, pageName, templatePath, pageTitle);
+                if (newPage != null) {
+                    Session session = resolver.adaptTo(Session.class);
+                    assert session != null;
+                    Node contentNode = session.getNode(newPage.getPath()+"/jcr:content");
+                    contentNode.setProperty("jcr:description","page desc");
+                    response.getWriter().write("Page created: " + newPage.getPath());
+                    session.save();
+                } else {
+                    response.getWriter().write("Page creation failed.");
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error creating page", e);
+            response.getWriter().write("Error creating page: " + e.getMessage());
+        }
+    }

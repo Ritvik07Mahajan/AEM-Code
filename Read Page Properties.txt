@@ -1,0 +1,40 @@
+ @Override
+    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) throws ServletException, IOException {
+        // Respond to GET requests
+
+        String parentPath = "/content/wknd/language-masters/en";
+        ResourceResolver resourceResolver = request.getResourceResolver();
+        Resource parentResource = resourceResolver.getResource(parentPath);
+
+        // The parent path under which you want to list all pages
+        if (parentResource != null) {
+            PageManager pageManager = resourceResolver.adaptTo(PageManager.class);
+            if (pageManager != null) {
+                    Page rootPage = pageManager.getPage(parentPath);
+                    if (rootPage != null) {
+                        logPageProperties(rootPage);
+                        // Iterate over child pages
+                        Iterator<Page> childIterator = rootPage.listChildren();
+                        while (childIterator.hasNext()) {
+                            Page childPage = childIterator.next();
+                            logPageProperties(childPage);
+
+                        }
+            } else {
+                response.sendError(SlingHttpServletResponse.SC_INTERNAL_SERVER_ERROR, "PageManager not available");
+            }
+        } else {
+            response.sendError(SlingHttpServletResponse.SC_NOT_FOUND, "Parent resource not found");
+        }
+    }
+
+      }
+
+    private void logPageProperties(Page page) {
+        ValueMap properties = page.getProperties();
+        String title = properties.get("jcr:title", String.class);
+        String description = properties.get("jcr:description", String.class);
+        logger.error("Page Path: {}", page.getPath());
+        logger.error("Title: {}", title);
+        logger.error("Description: {}", description);
+    }
