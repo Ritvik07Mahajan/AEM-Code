@@ -1,0 +1,66 @@
+package com.chli.core.servlets;
+
+import com.day.cq.dam.api.Asset;
+import com.day.cq.dam.api.AssetManager;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.servlets.SlingAllMethodsServlet;
+import org.apache.sling.api.resource.ResourceResolver;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.framework.Constants;
+
+import javax.servlet.Servlet;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+
+import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_PATHS;
+
+@Component(service = Servlet.class,
+        property = {
+                Constants.SERVICE_DESCRIPTION + "=Image Upload Servlet",
+                SLING_SERVLET_PATHS + "=/bin/chli/demoServlet"
+        })
+public class DemoServlet extends SlingAllMethodsServlet {
+
+    @Override
+    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) throws IOException {
+        String imageUrl = request.getParameter("imageUrl");
+        String damFolderPath = request.getParameter("damFolderPath");
+        String imageName = request.getParameter("imageName");
+
+        InputStream is = null;
+        String mimeType = "";
+        try {
+            URL Url = new URL(imageUrl);
+            URLConnection uCon = Url.openConnection();
+            is = uCon.getInputStream();
+            mimeType = uCon.getContentType();
+            String fileExt = StringUtils.EMPTY;
+
+            fileExt = mimeType.replaceAll("image/", "");
+
+            AssetManager assetManager = request.getResourceResolver().adaptTo(AssetManager.class);
+            Asset imageAsset = assetManager.createAsset(damFolderPath+"/" + imageName, is, mimeType , true);
+            response.setContentType("text/plain");
+            response.getWriter().write("Image Uploaded = " + imageName +"  to this path ="+ imageAsset.getPath());
+
+        }catch (Exception e) {
+            response.getWriter().write("error  occured while uploading the asset {}");
+        }finally {
+            try {
+                if (is != null) {
+                    is.close();
+                }
+            } catch (IOException e) {
+                response.getWriter().write("error  occured {}");
+            }
+        }
+
+    }
+}
