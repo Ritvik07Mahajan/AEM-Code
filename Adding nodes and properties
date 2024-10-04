@@ -1,0 +1,70 @@
+package com.chli.core.servlets;
+
+import com.day.cq.dam.api.Asset;
+import com.day.cq.dam.api.AssetManager;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.servlets.SlingAllMethodsServlet;
+import org.apache.sling.api.resource.ResourceResolver;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.framework.Constants;
+
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.servlet.Servlet;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+
+import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_PATHS;
+
+@Component(service = Servlet.class,
+        property = {
+                Constants.SERVICE_DESCRIPTION + "=Image Upload Servlet",
+                SLING_SERVLET_PATHS + "=/bin/chli/sampleServlet"
+        })
+public class SampleServlet extends SlingAllMethodsServlet {
+
+    @Override
+    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) throws IOException {
+
+        ResourceResolver resolver=request.getResourceResolver();
+
+        Resource resource=resolver.getResource("/content/chli/us/en/test0");
+
+        Session session=resolver.adaptTo(Session.class);
+
+        try {
+
+            Node node=session.getNode("/content/chli/us/en/test0/jcr:content/root/container/contact");
+
+            //code to save properties in a node
+            response.getWriter().write("node has title"+node.hasProperty("image"));
+            response.getWriter().write("node has title"+node.getProperty("image").getValue());
+
+        //    node.remove()
+          node.setProperty("description","this is decription");
+           node.save();
+           
+           // code to create a node
+            String path="/content/chli/us/en/test0/jcr:content/root/container";
+
+            Node parentNode=session.getNode(path);
+            Node newNode = parentNode.addNode("newNode", "nt:unstructured");
+            newNode.setProperty("sling:resourceType", "chli/components/leaderprofile");
+
+            parentNode.save();
+        }
+
+        catch(RepositoryException e){
+            e.printStackTrace();;
+        }
+    }
+}
